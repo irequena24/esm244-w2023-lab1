@@ -12,7 +12,97 @@ library(tidyverse)
 library(here)
 library(sf)
 library(tmap)
+```
 
+### Read in the "trees data"
+```{r}
+sf_trees <- read_csv(here('data','sf_trees','sf_trees.csv'))
+
+# summary(sf_trees)
+# names(sf_trees) 
+
+# names gives us the columns names
+
+sf_trees_status <- sf_trees %>% 
+  group_by(legal_status) %>% 
+  summarise(tree_count = n())
+
+top_5_status <- sf_trees %>% 
+  group_by(legal_status) %>% 
+  summarise(tree_count = n()) %>% 
+  slice_max(tree_count, n= 5) %>% 
+  arrange(-tree_count)
+
+# slice max will find the maximum of a variable and keep some of the values (in this case it keeps the top 5)
+
+# arrange will do from low to high by defect. If you want to invert it, put a minus - sign before tree_count arrange(-tree_count)
+```
+
+### Plot "Top 5 Legal Status"
+```{r}
+ggplot(data = top_5_status, aes(x = fct_reorder (legal_status, tree_count), y = tree_count))+
+  geom_col() +
+  labs(y="Tree count", x="Legal status") +
+  coord_flip()+
+  theme_minimal()
+
+# geom_col() makes a bar chart, where its height is as high as the highest y bar.
+
+#these are not meaningful, so lets rearrange it with fct_reorder. Before it was aes(x=legal_status, y= tree_count)
+
+# labs() is labels
+# coord_flip() flip x and y axis
 
 ```
+
+
+### Keep observations where legal status is "Permitted Site" and caretaker is "MTA"
+
+```{r}
+# sf_trees$legal_status %>% unique()
+permitted_mta <- sf_trees %>% 
+  filter(legal_status == "Permitted Site" & caretaker == "MTA")
+
+# sf_trees$legal_status %>% unique() is to view the variables
+
+# == means it matches " "
+```
+
+### Keep Blackwood acacia trees, only legal_status, date, latitude, longitude columns
+
+```{r}
+blackwood_acacia <- sf_trees %>% 
+  filter(str_detect(species, "Blackwood Acacia")) %>% 
+  select(legal_status, date, latitude, longitude) 
+         
+# str_detects is string dectects where it looks for a pattern
+
+# make a plot
+ggplot(data=blackwood_acacia, aes(x=longitude, y=latitude))+
+  geom_point()
+```
+
+### Use tidyr::separate() to separate one column into multiple. Think species column of original data. Use tidyr::unite() to rejoin
+```{r}
+sf_trees_sep <- sf_trees %>% 
+  separate(species, into = c('spp_scientific', 'spp_common'), sep = ' :: ')
+
+# we can reverse this, where we can join to columns (think joining genus and species)
+
+sf_trees_unite <- sf_trees %>% 
+  unite("id_status", tree_id:species, sep = '_NEW_')
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
